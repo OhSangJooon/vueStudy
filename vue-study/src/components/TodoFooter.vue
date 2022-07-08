@@ -8,7 +8,7 @@
 export default {
   methods: {
     clearTodo() {
-      this.$emit('removeAll');
+      this.$emit('removeAll');    // 클릭 이벤트를 removeAll 이라는 이벤트명으로 상위 컴포넌트에 전달
     }
   }
 }
