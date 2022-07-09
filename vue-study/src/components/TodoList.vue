@@ -7,23 +7,61 @@
         ps. v-for에서 key값만 가지고 오고 싶을땐 {{key}} 입력. 이경우 위의 :key와 다름
       -->
       <li v-for="(todoItem, index) in propsdata" :key="todoItem" class="shadow">
-        <i class="checkBtn fas fa-check" aria-hidden="true"></i>
-        {{ todoItem }} {{key}}
-        <span class="removeBtn" type="button" @click="removeTodo(todoItem, index)">
-          <i class="far fa-trash-alt" aria-hidden="true"></i>
+        <i class="checkBtn fas fa-check" aria-hidden="true" v-show="propMode == 'R'" @click="modeChange(index,todoItem)"></i>
+        <span class="content" v-bind:id="`ctnt${index}`" >{{ todoItem }}</span>
+        <input class="inputUdtBox" v-show="idx == index && propMode == 'U'" type="text" v-model="udtTodoItem" :placeholder="placeholder" v-on:keypress.enter="updateTodo(todoItem, index)">
+        <span class="removeBtn" type="button"  >
+          <i class="far fa-trash-alt" aria-hidden="true" @click="removeTodo(todoItem, index)" v-show="propMode == 'R'" ></i>
+          <i class="fas fa-plus" aria-hidden="true" @click="updateTodo(todoItem, index)" v-show="idx == index && propMode == 'U'"></i>
         </span>
       </li>
     </transition-group>
+    <modal v-if="showModal" @close="showModal = false">     <!-- flag값이 true인 경우 동작 닫기 버튼을 누르면 flag값 false로 변경-->
+      <h3 slot="header">경고</h3>
+      <span slot="footer" @click="showModal = false">할 일을 입력하세요.
+        <i class="closeModalBtn fas fa-times" aria-hidden="true"></i>
+      </span>
+    </modal>
   </section>
 </template>
 
 <script>
+import Modal from "./common/Modal";
+
 export default {
-  props: ['propsdata'],   // 부모 컴포넌트인 App.vue에서 데이터 전달
+  data() {
+    return {
+      udtTodoItem: '',
+      showModal: false,
+      placeholder: ''
+    }
+  },
+  props: ['propsdata', 'propMode', 'idx'],   // 부모 컴포넌트인 App.vue에서 데이터 전달
   methods: {
     removeTodo(todoItem, index) {
       this.$emit('removeTodo', todoItem, index);    /* 부모 컴포넌트로 이벤트 값 전달 */
+    },
+    modeChange(index,todoItem) {        /* 업데이트 모드로 변경 (인풋박스, placeholder 초기화)*/
+      this.$emit('modeChange', index);
+      this.placeholder = todoItem;
+      this.udtTodoItem = '';
+    },
+    updateTodo(todoItem, index) {
+      if (this.udtTodoItem !== "") {    // this.newTodoItem은 현재 컴포넌트를 의미 / 인풋 박스에 입력된 데이터가 없을 경우 예외 처리
+        var value = this.udtTodoItem && this.udtTodoItem.trim();
+        this.$emit('updateTodo', todoItem, index, value);    /* 부모 컴포넌트로 이벤트 값 전달 */
+        this.clearInput();            // 현재 메소드에서 this 를 사용하여 clearInput에 접근
+      } else {
+        // 인풋 박스에 값이 없으면 flag값 true로 변경
+        this.showModal = !this.showModal;
+      }
+    },
+    clearInput() {    // 인풋 박스의 데이터 초기화
+      this.udtTodoItem = '';
     }
+  },
+  components: {
+    Modal: Modal
   }
 }
 </script>
@@ -60,5 +98,18 @@ li {
 .list-enter, .list-leave-to {
   opacity: 0;
   transform: translateY(30px);
+}
+input:focus {
+  outline: none;
+}
+.inputUdtBox {
+  background: white;
+  height: 35px;
+  line-height: 55px;
+  border-radius: 5px;
+}
+.inputBox input {
+  border-style: none;
+  font-size: 0.9rem;
 }
 </style>

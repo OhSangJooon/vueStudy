@@ -4,10 +4,10 @@
   <div id="app">
     <TodoHeader></TodoHeader>
     <TodoInput v-on:addTodo="addTodo"></TodoInput>        <!-- 이벤트 전달방식 사용 (하위 이벤트(addTodo) -> 상위 컴포넌트에서 받아 메서드 동작(addTodo)) -->
-    <TodoList v-bind:propsdata="todoItems" @removeTodo="removeTodo"></TodoList>
+    <TodoList v-on:updateTodo="updateTodo" v-bind:propsdata="todoItems" :propMode="mode" :idx="idx" @modeChange="modeChange" @removeTodo="removeTodo"></TodoList>
     <!-- TodoList(하위컴포넌트)의 propsdata 속성에 props로 전달 (객체명으로 바인딩)  속성값은 for문을 돌려 생성된 todoItems 배열
           removeTodo 이벤트를 하위에서 전달받아 부모 컴포넌트에서 정의한 removeTodo 메서드 동작 (이벤트 발생)-->
-    <TodoFooter v-on:removeAll="clearAll"></TodoFooter>   <!-- 이벤트 전달방식 사용 (하위 이벤트(removeAll) -> 상위 컴포넌트에서 받아 메서드 동작(clearAll)) -->
+    <TodoFooter :propMode="mode" v-on:removeAll="clearAll" v-on:modeCancel="modeCancel"></TodoFooter>   <!-- 이벤트 전달방식 사용 (하위 이벤트(removeAll) -> 상위 컴포넌트에서 받아 메서드 동작(clearAll)) -->
   </div>
 </template>
 
@@ -22,7 +22,9 @@ export default {
     return {
       /* 데이터 변경에 대한 즉각적인 반응을 하기 위해 최상위 컴포넌트에 조회, 추가, 삭제를 등록한다.
       *  하위 컴포넌트 TodoList에 데이터를 전달하기 위해 todoItems 선언 */
-      todoItems: []   // 로컬 스토리지의 데이터를 담기 위해 빈 배열 생성 (v-for 목록 렌더링에 활용하기 위해 객체가 아닌 빈 배열로 선언)
+      todoItems: [],   // 로컬 스토리지의 데이터를 담기 위해 빈 배열 생성 (v-for 목록 렌더링에 활용하기 위해 객체가 아닌 빈 배열로 선언)
+      mode: 'R',
+      idx: 0
     }
   },
   methods: {
@@ -37,7 +39,30 @@ export default {
     },
     removeTodo(todoItem, index) {   // 하위 컴포넌트 (TodoList 에서 $emit으로 보낸 값을 파라미터로 받음 (할일명, 인덱스))
       localStorage.removeItem(todoItem);
-      this.todoItems.splice(index, 1);    // splice 메서드는 배열의 index에서부터 1번째까지 삭제하겠다는 의미
+      this.todoItems.splice(todoItem, 1);    // splice 메서드는 배열의 index에서부터 1번째까지 삭제하겠다는 의미
+    },
+    updateTodo(todoItem, index, value) {
+      localStorage.removeItem(localStorage.key(index));
+      localStorage.setItem(value, value);
+      this.todoItems[index] = value;
+      this.modeCancel();
+    },
+    modeChange(index) {
+      if(this.mode == 'R') {
+        this.mode = 'U';
+        document.querySelector(`#ctnt${index}`).style.display = 'none';
+      }
+      this.idx = index;
+    },
+    modeCancel() {
+      const content = document.querySelectorAll(`.content`);
+
+      if(this.mode == 'U') {
+        this.mode = 'R';
+        for(let i=0; i < content.length; i++){
+          content[i].style.display = 'block';
+        }
+      }
     }
   },
   created() {   // created 라이프 사이클 훅에 로컬 스토리지의 데이터 개수만큼 반복 > 위에서 생성한 todoItems 배열에 로컬스토리지 값 push
